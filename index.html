@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded Chat Widget Preview</title>
+    
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts for the new look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base styles and custom CSS adapted for the new theme */
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #000000;
+        }
+
+        /* Hides the default floating launcher button provided by LeadConnector */
+        chat-widget {
+            display: none !important;
+        }
+
+        /* Styles the container that will hold the embedded chat iframe */
+        #embedded-chat-container {
+            width: 400px;
+            height: 600px;
+            border: 1px solid #2d3748; /* Darker border for the theme */
+            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.2); /* Subtle shadow for dark bg */
+            border-radius: 12px; /* Slightly larger radius */
+            overflow: hidden; /* Ensures the iframe corners are rounded */
+            position: relative; 
+        }
+
+        /* Ensures the moved iframe fills its new container perfectly */
+        #embedded-chat-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            box-shadow: none; /* Override any default shadow from the widget */
+        }
+
+        /* Optional: Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            #embedded-chat-container {
+                width: 100%;
+                max-width: 420px; /* Max width on mobile for better aesthetics */
+                height: calc(100vh - 150px); /* Adjust height to be more responsive on mobile */
+                min-height: 450px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-200">
+
+    <div class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+        
+        <!-- Header Content -->
+        <div class="text-center max-w-2xl mx-auto mb-8">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
+                Welcome to Our Support Center
+            </h1>
+            <p class="mt-4 text-base sm:text-lg text-gray-400">
+                Have a question? Our AI assistant is here to help you 24/7. Just start typing in the chat window below to get started.
+            </p>
+        </div>
+
+        <!-- This is where the chat widget will be embedded -->
+        <div id="embedded-chat-container">
+            <!-- The JavaScript will move the chat iframe here -->
+        </div>
+
+    </div>
+
+    <!-- The 1prompt/LeadConnector widget loader script -->
+    <script src="https://beta.leadconnectorhq.com/loader.js" 
+            data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js" 
+            data-widget-id="68116b899c48eebdd4d81930"
+            async>
+    </script>
+
+    <!-- Custom JavaScript to handle the embedding logic -->
+    <script>
+        // This script waits for the LeadConnector widget to be fully loaded before running.
+        window.addEventListener('LC_chatWidgetLoaded', function () {
+            
+            // This function finds the widget's iframe and moves it into our designated container.
+            const embedChatWidget = () => {
+                // The widget's iframe is typically inside a container with this class.
+                const widgetContainer = document.querySelector('.hl_chat_widget_container');
+                const chatIframe = widgetContainer ? widgetContainer.querySelector('iframe') : null;
+                const targetContainer = document.getElementById('embedded-chat-container');
+
+                if (chatIframe && targetContainer) {
+                    // Move the iframe into your custom container.
+                    targetContainer.appendChild(chatIframe);
+                    
+                    // Disconnect the observer once the job is done to save resources.
+                    if (observer) {
+                        observer.disconnect();
+                    }
+                }
+            };
+
+            // A MutationObserver is used to reliably detect when the widget iframe is added to the page.
+            // This is more robust than using a fixed timer (setTimeout).
+            const observer = new MutationObserver((mutationsList, obs) => {
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'childList') {
+                        // Check if the specific iframe we're looking for has been added to the DOM.
+                        if (document.querySelector('.hl_chat_widget_container iframe')) {
+                            embedChatWidget();
+                            obs.disconnect(); // Stop observing after we find and move it.
+                            return;
+                        }
+                    }
+                }
+            });
+
+            // Start observing the entire document body for added nodes.
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            // Programmatically "open" the widget. This is a crucial step that forces 
+            // the chat iframe to be created and injected into the DOM.
+            if (window.leadConnector && window.leadConnector.chatWidget) {
+                window.leadConnector.chatWidget.openWidget();
+            }
+        });
+    </script>
+
+</body>
+</html>
