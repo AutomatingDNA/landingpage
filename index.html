@@ -85,12 +85,11 @@
 
     <!-- Custom JavaScript to handle the embedding logic -->
     <script>
-        // This script waits for the LeadConnector widget to be fully loaded before running.
-        window.addEventListener('LC_chatWidgetLoaded', function () {
-            
-            // This function finds the widget's iframe and moves it into our designated container.
+        // We wait until the basic HTML of the page is ready.
+        window.addEventListener('DOMContentLoaded', () => {
+
+            // This function finds the widget iframe and moves it into your container.
             const embedChatWidget = () => {
-                // The widget's iframe is typically inside a container with this class.
                 const widgetContainer = document.querySelector('.hl_chat_widget_container');
                 const chatIframe = widgetContainer ? widgetContainer.querySelector('iframe') : null;
                 const targetContainer = document.getElementById('embedded-chat-container');
@@ -99,36 +98,33 @@
                     // Move the iframe into your custom container.
                     targetContainer.appendChild(chatIframe);
                     
-                    // Disconnect the observer once the job is done to save resources.
-                    if (observer) {
-                        observer.disconnect();
-                    }
+                    // Once we've successfully moved the iframe, we don't need to watch anymore.
+                    observer.disconnect();
+                    console.log('Chat widget successfully moved.');
                 }
             };
 
-            // A MutationObserver is used to reliably detect when the widget iframe is added to the page.
-            // This is more robust than using a fixed timer (setTimeout).
+            // A MutationObserver is the most reliable way to detect when a new element
+            // is added to the page by an external script.
             const observer = new MutationObserver((mutationsList, obs) => {
+                // We're looking for any change where new elements are added.
                 for (const mutation of mutationsList) {
-                    if (mutation.type === 'childList') {
-                        // Check if the specific iframe we're looking for has been added to the DOM.
+                    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                        // Check if the node we're looking for now exists.
                         if (document.querySelector('.hl_chat_widget_container iframe')) {
                             embedChatWidget();
-                            obs.disconnect(); // Stop observing after we find and move it.
+                            // We found it, so we can stop observing.
                             return;
                         }
                     }
                 }
             });
 
-            // Start observing the entire document body for added nodes.
-            observer.observe(document.body, { childList: true, subtree: true });
-
-            // Programmatically "open" the widget. This is a crucial step that forces 
-            // the chat iframe to be created and injected into the DOM.
-            if (window.leadConnector && window.leadConnector.chatWidget) {
-                window.leadConnector.chatWidget.openWidget();
-            }
+            // Start observing the entire body of the page for any changes.
+            observer.observe(document.body, {
+                childList: true, // Watch for added/removed children
+                subtree: true    // Watch all descendants of the body
+            });
         });
     </script>
 
